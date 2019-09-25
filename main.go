@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+
+	"github.com/aereal/migrate-gh-repo/config"
 )
 
 func main() {
@@ -13,5 +15,10 @@ func main() {
 }
 
 func run(argv []string) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	log.Printf("config = %#v", cfg)
 	return nil
 }
