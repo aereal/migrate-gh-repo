@@ -25,7 +25,7 @@ func (l *label) Eq(other Equalable) bool {
 		return false
 	}
 	if otherLabel, ok := other.(*label); ok {
-		return l.String() == otherLabel.String()
+		return l.GetColor() == otherLabel.GetColor() && l.GetDescription() == otherLabel.GetDescription()
 	}
 	return false
 }

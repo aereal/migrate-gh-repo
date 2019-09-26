@@ -25,7 +25,7 @@ func (m *milestone) Eq(other Equalable) bool {
 		return false
 	}
 	if otherMilestone, ok := other.(*milestone); ok {
-		return m.String() == otherMilestone.String()
+		return m.GetDescription() == otherMilestone.GetDescription() && m.GetDueOn() == otherMilestone.GetDueOn()
 	}
 	return false
 }
