@@ -24,7 +24,7 @@ func (l *label) Eq(other Equalable) bool {
 	if !l.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherLabel, ok := other.(*milestone); ok {
+	if otherLabel, ok := other.(*label); ok {
 		return l.String() == otherLabel.String()
 	}
 	return false
