@@ -1,10 +1,19 @@
 package config
 
+import "strings"
+
+Repository :: {
+	fullName: !=""
+	parts:    strings.Split(fullName, "/")
+	owner:    parts[0]
+	name:     parts[1]
+}
+
 Endpoint :: {
 	url?:                   string
 	token:                  string & !=""
 	ignoreSSLVerification?: bool | *false
-	repo:                   !=""
+	repo:                   Repository
 }
 
 source: Endpoint

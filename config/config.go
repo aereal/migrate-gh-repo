@@ -9,11 +9,16 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type Repository struct {
+	Owner string
+	Name  string
+}
+
 type Endpoint struct {
 	URL                   string `json:"url"`
 	Token                 string `json:"token"`
 	IgnoreSSLVerification bool
-	Repo                  string
+	Repo                  *Repository
 }
 
 func (e *Endpoint) GitHubClient(ctx context.Context) (*github.Client, error) {
