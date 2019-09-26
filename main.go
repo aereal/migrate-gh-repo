@@ -15,7 +15,7 @@ func main() {
 }
 
 func run(argv []string) error {
-	cfg, err := config.Load()
+	cfg, err := config.Load("./config/default.cue")
 	if err != nil {
 		return err
 	}
