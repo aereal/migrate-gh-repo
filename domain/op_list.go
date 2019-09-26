@@ -105,8 +105,7 @@ type MilestoneOpsList []*MilestoneOp
 func (l MilestoneOpsList) String() string {
 	s := "["
 	for _, op := range l {
-		s += op.String()
-		s += ", "
+		s += fmt.Sprintf("%s, ", op)
 	}
 	s += "]"
 	return s
