@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/go-github/github"
@@ -68,3 +69,117 @@ func Test_eqMilestone(t *testing.T) {
 	}
 }
 
+func TestNewMilestoneOpsList(t *testing.T) {
+	type args struct {
+		sourceMilestones []*github.Milestone
+		targetMilestones []*github.Milestone
+	}
+	tests := []struct {
+		name string
+		args args
+		want MilestoneOpsList
+	}{
+		{
+			name: "source=empty target=empty",
+			args: args{
+				sourceMilestones: []*github.Milestone{},
+				targetMilestones: []*github.Milestone{},
+			},
+			want: nil,
+		},
+		{
+			name: "source=[A] target=empty",
+			args: args{
+				sourceMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title: strRef("poppoe"),
+					},
+				},
+				targetMilestones: []*github.Milestone{},
+			},
+			want: MilestoneOpsList([]*MilestoneOp{
+				&MilestoneOp{
+					Kind: OpCreate,
+					Milestone: &github.Milestone{
+						Title: strRef("poppoe"),
+					},
+				},
+			}),
+		},
+		{
+			name: "source=[A,B] target=[A]",
+			args: args{
+				sourceMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title: strRef("poppoe1"),
+					},
+					&github.Milestone{
+						Title: strRef("poppoe2"),
+					},
+				},
+				targetMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title: strRef("poppoe1"),
+					},
+				},
+			},
+			want: MilestoneOpsList([]*MilestoneOp{
+				&MilestoneOp{
+					Kind: OpCreate,
+					Milestone: &github.Milestone{
+						Title: strRef("poppoe2"),
+					},
+				},
+			}),
+		},
+		{
+			name: "source=[A] target=[A]",
+			args: args{
+				sourceMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title: strRef("poppoe"),
+					},
+				},
+				targetMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title: strRef("poppoe"),
+					},
+				},
+			},
+			want: MilestoneOpsList([]*MilestoneOp{}),
+		},
+		{
+			name: "source=[A] target=[A']",
+			args: args{
+				sourceMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title:       strRef("poppoe"),
+						Description: strRef("master"),
+					},
+				},
+				targetMilestones: []*github.Milestone{
+					&github.Milestone{
+						Title:       strRef("poppoe"),
+						Description: strRef("old"),
+					},
+				},
+			},
+			want: MilestoneOpsList([]*MilestoneOp{
+				&MilestoneOp{
+					Kind: OpUpdate,
+					Milestone: &github.Milestone{
+						Title:       strRef("poppoe"),
+						Description: strRef("master"),
+					},
+				},
+			}),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewMilestoneOpsList(tt.args.sourceMilestones, tt.args.targetMilestones); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewMilestoneOpsList() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
