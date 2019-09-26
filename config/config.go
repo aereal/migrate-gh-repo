@@ -7,8 +7,10 @@ import (
 )
 
 type Endpoint struct {
-	URL   string `json:"url"`
-	Token string `json:"token"`
+	URL                   string `json:"url"`
+	Token                 string `json:"token"`
+	IgnoreSSLVerification bool
+	Repo                  string
 }
 
 type Config struct {
