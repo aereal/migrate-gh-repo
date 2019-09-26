@@ -6,15 +6,49 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func eqMilestone(l *github.Milestone, r *github.Milestone) bool {
-	if l == nil || r == nil {
-		return false
-	}
-	return milestoneID(l) == milestoneID(r)
+type Key struct {
+	kind string
+	repr string
 }
 
-func milestoneID(milestone *github.Milestone) string {
-	return milestone.GetTitle()
+func (k *Key) String() string {
+	return fmt.Sprintf("kind=%s;repr=%s", k.kind, k.repr)
+}
+
+func (k *Key) Eq(other *Key) bool {
+	if k == nil || other == nil {
+		return false
+	}
+	return k.String() == other.String()
+}
+
+type Equalable interface {
+	Key() *Key
+	Eq(other Equalable) bool
+}
+
+type milestone struct {
+	*github.Milestone
+}
+
+func (m *milestone) Key() *Key {
+	if m == nil {
+		return nil
+	}
+	return &Key{kind: "milestone", repr: m.GetTitle()}
+}
+
+func (m *milestone) Eq(other Equalable) bool {
+	if m == nil || other == nil {
+		return false
+	}
+	if !m.Key().Eq(other.Key()) {
+		return false
+	}
+	if otherMilestone, ok := other.(*milestone); ok {
+		return m.String() == otherMilestone.String()
+	}
+	return false
 }
 
 func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone) MilestoneOpsList {
@@ -24,14 +58,15 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 
 	kinds := map[string]OpKind{}
 	for _, src := range sourceMilestones {
-		id := milestoneID(src)
-		kinds[id] = OpCreate
+		srcm := &milestone{src}
+		kinds[srcm.Key().String()] = OpCreate
 		for _, tgt := range targetMilestones {
-			if eqMilestone(src, tgt) {
-				if src.String() == tgt.String() { // completely equal
-					kinds[id] = OpNothing
+			tgtm := &milestone{tgt}
+			if srcm.Key().Eq(tgtm.Key()) {
+				if srcm.Eq(tgtm) { // completely equal
+					kinds[srcm.Key().String()] = OpNothing
 				} else {
-					kinds[id] = OpUpdate
+					kinds[srcm.Key().String()] = OpUpdate
 				}
 			}
 		}
@@ -39,7 +74,8 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 
 	ops := []*MilestoneOp{}
 	for _, src := range sourceMilestones {
-		switch kinds[milestoneID(src)] {
+		srcm := &milestone{src}
+		switch kinds[srcm.Key().String()] {
 		case OpCreate:
 			ops = append(ops, &MilestoneOp{
 				Kind:      OpCreate,

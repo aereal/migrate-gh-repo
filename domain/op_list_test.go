@@ -9,10 +9,10 @@ import (
 
 func strRef(s string) *string { return &s }
 
-func Test_eqMilestone(t *testing.T) {
+func Test_milestoneEq(t *testing.T) {
 	type args struct {
-		l *github.Milestone
-		r *github.Milestone
+		l *milestone
+		r *milestone
 	}
 	tests := []struct {
 		name string
@@ -30,7 +30,7 @@ func Test_eqMilestone(t *testing.T) {
 		{
 			name: "A vs nil",
 			args: args{
-				l: &github.Milestone{},
+				l: &milestone{},
 				r: nil,
 			},
 			want: false,
@@ -38,11 +38,15 @@ func Test_eqMilestone(t *testing.T) {
 		{
 			name: "A vs A",
 			args: args{
-				l: &github.Milestone{
-					Title: strRef("poppoe"),
+				l: &milestone{
+					&github.Milestone{
+						Title: strRef("poppoe"),
+					},
 				},
-				r: &github.Milestone{
-					Title: strRef("poppoe"),
+				r: &milestone{
+					&github.Milestone{
+						Title: strRef("poppoe"),
+					},
 				},
 			},
 			want: true,
@@ -50,11 +54,13 @@ func Test_eqMilestone(t *testing.T) {
 		{
 			name: "A vs B",
 			args: args{
-				l: &github.Milestone{
+				l: &milestone{&github.Milestone{
 					Title: strRef("poppoe"),
 				},
-				r: &github.Milestone{
+				},
+				r: &milestone{&github.Milestone{
 					Title: strRef("ubobobo"),
+				},
 				},
 			},
 			want: false,
@@ -62,7 +68,7 @@ func Test_eqMilestone(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := eqMilestone(tt.args.l, tt.args.r); got != tt.want {
+			if got := tt.args.l.Eq(tt.args.r); got != tt.want {
 				t.Errorf("eqMilestone() = %v, want %v", got, tt.want)
 			}
 		})
