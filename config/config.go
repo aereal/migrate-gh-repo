@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"net/http"
 
 	"cuelang.org/go/cue"
+	"github.com/google/go-github/github"
 )
 
 type Endpoint struct {
@@ -11,6 +13,13 @@ type Endpoint struct {
 	Token                 string `json:"token"`
 	IgnoreSSLVerification bool
 	Repo                  string
+}
+
+func (e *Endpoint) GitHubClient(httpClient *http.Client) (*github.Client, error) {
+	if e.URL != "" {
+		return github.NewEnterpriseClient(e.URL, e.URL /* TODO */, httpClient)
+	}
+	return github.NewClient(httpClient), nil
 }
 
 type Config struct {

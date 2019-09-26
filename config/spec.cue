@@ -1,7 +1,7 @@
 package config
 
 Endpoint :: {
-	url:                    string | *"https://api.github.com"
+	url?:                   string
 	token:                  string & !=""
 	ignoreSSLVerification?: bool | *false
 	repo:                   !=""
