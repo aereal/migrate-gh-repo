@@ -1,11 +1,12 @@
 package config
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 
 	"cuelang.org/go/cue"
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 )
 
 type Endpoint struct {
@@ -15,7 +16,12 @@ type Endpoint struct {
 	Repo                  string
 }
 
-func (e *Endpoint) GitHubClient(httpClient *http.Client) (*github.Client, error) {
+func (e *Endpoint) GitHubClient(ctx context.Context) (*github.Client, error) {
+	// TODO: disable ssl verification
+	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: e.Token,
+	}))
+
 	if e.URL != "" {
 		return github.NewEnterpriseClient(e.URL, e.URL /* TODO */, httpClient)
 	}
