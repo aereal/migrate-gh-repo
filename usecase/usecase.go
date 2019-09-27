@@ -16,15 +16,28 @@ func New(sourceClient, targetClient *github.Client) (*Usecase, error) {
 	if sourceClient == nil || targetClient == nil {
 		return nil, fmt.Errorf("both of sourceClient and targetClient must be given")
 	}
+	sourceService, err := external.NewGitHubService(sourceClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build GitHubService for source: %w", err)
+	}
+	targetService, err := external.NewGitHubService(targetClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build GitHubService for target: %w", err)
+	}
+
 	return &Usecase{
-		sourceClient: sourceClient,
-		targetClient: targetClient,
+		sourceClient:  sourceClient,
+		targetClient:  targetClient,
+		sourceService: sourceService,
+		targetService: targetService,
 	}, nil
 }
 
 type Usecase struct {
-	sourceClient *github.Client
-	targetClient *github.Client
+	sourceClient  *github.Client
+	sourceService *external.GitHubService
+	targetClient  *github.Client
+	targetService *external.GitHubService
 }
 
 type request interface {
@@ -181,21 +194,12 @@ func (u *Usecase) buildRequests(ctx context.Context, source, target *config.Repo
 }
 
 func (u *Usecase) buildMilestoneRequests(ctx context.Context, source, target *config.Repository) ([]request, error) {
-	sourceService, err := external.NewGitHubService(u.sourceClient)
-	if err != nil {
-		return nil, err
-	}
-	targetService, err := external.NewGitHubService(u.targetClient)
-	if err != nil {
-		return nil, err
-	}
-
-	sourceMilestones, err := sourceService.SlurpMilestones(ctx, source.Owner, source.Name)
+	sourceMilestones, err := u.sourceService.SlurpMilestones(ctx, source.Owner, source.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch milestones from source repository: %w", err)
 	}
 	log.Printf("source milestones = %#v", sourceMilestones)
-	targetMilestones, err := targetService.SlurpMilestones(ctx, target.Owner, target.Name)
+	targetMilestones, err := u.targetService.SlurpMilestones(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch milestones from target repository: %w", err)
 	}
@@ -210,21 +214,12 @@ func (u *Usecase) buildMilestoneRequests(ctx context.Context, source, target *co
 }
 
 func (u *Usecase) buildLabelRequests(ctx context.Context, source, target *config.Repository) ([]request, error) {
-	sourceService, err := external.NewGitHubService(u.sourceClient)
-	if err != nil {
-		return nil, err
-	}
-	targetService, err := external.NewGitHubService(u.targetClient)
-	if err != nil {
-		return nil, err
-	}
-
-	sourceLabels, err := sourceService.SlurpLabels(ctx, source.Owner, source.Name)
+	sourceLabels, err := u.sourceService.SlurpLabels(ctx, source.Owner, source.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch labels from source repository: %w", err)
 	}
 	log.Printf("source labels = %#v", sourceLabels)
-	targetLabels, err := targetService.SlurpLabels(ctx, target.Owner, target.Name)
+	targetLabels, err := u.targetService.SlurpLabels(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch labels from target repository: %w", err)
 	}
