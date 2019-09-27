@@ -146,13 +146,13 @@ func newLabelRequest(repo *config.Repository, op *domain.LabelOp) request {
 }
 
 type createIssueRequest struct {
-	owner string
-	repo  string
-	issue *github.Issue
+	owner    string
+	repo     string
+	issueReq *github.IssueRequest
 }
 
 func (r *createIssueRequest) Do(ctx context.Context, ghClient *github.Client) error {
-	log.Printf("create issue on %s/%s: %s", r.owner, r.repo, r.issue)
+	log.Printf("create issue on %s/%s: %#v", r.owner, r.repo, r.issueReq)
 	return nil
 }
 
@@ -173,17 +173,28 @@ func newIssueRequest(sourceRepo, targetRepo *config.Repository, op *domain.Issue
 	switch op.Kind {
 	case domain.OpCreate:
 		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
-		issue := &github.Issue{
+		assignees := []string{}
+		for _, assignee := range op.Issue.Assignees {
+			assignees = append(assignees, assignee.GetLogin())
+		}
+		labels := []string{}
+		for _, label := range op.Issue.Labels {
+			labels = append(labels, label.GetName())
+		}
+		issueReq := &github.IssueRequest{
 			Body:      &body,
-			Assignees: op.Issue.Assignees,
-			Milestone: op.Issue.Milestone,
-			Labels:    op.Issue.Labels,
+			Assignees: &assignees,
+			Labels:    &labels,
 			Title:     op.Issue.Title,
+			State:     op.Issue.State,
+		}
+		if op.Issue.Milestone != nil && op.Issue.Milestone.Number != nil {
+			issueReq.Milestone = op.Issue.Milestone.Number
 		}
 		return &createIssueRequest{
-			owner: targetRepo.Owner,
-			repo:  targetRepo.Name,
-			issue: issue,
+			owner:    targetRepo.Owner,
+			repo:     targetRepo.Name,
+			issueReq: issueReq,
 		}
 	case domain.OpUpdate:
 		body := fmt.Sprintf("This issue or P-R referenced as %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
