@@ -10,6 +10,18 @@ type issue struct {
 	*github.Issue
 }
 
+func (i *issue) hasMigrated() bool {
+	if i == nil {
+		return false
+	}
+	for _, label := range i.Labels {
+		if label.GetName() == "migrated" {
+			return true
+		}
+	}
+	return false
+}
+
 func (i *issue) Key() *Key {
 	if i == nil {
 		return nil
@@ -43,7 +55,7 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 		for _, t := range targetIssues {
 			target := &issue{t}
 			if src.Key().Eq(target.Key()) {
-				if src.Eq(target) { // completely equal
+				if target.hasMigrated() || src.Eq(target) { // completely equal
 					kinds[src.Key().String()] = OpNothing
 				} else {
 					kinds[src.Key().String()] = OpUpdate

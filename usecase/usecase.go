@@ -160,6 +160,21 @@ func (r *createIssueRequest) Do(ctx context.Context, ghClient *github.Client) er
 	return nil
 }
 
+type updateIssueRequest struct {
+	owner       string
+	repo        string
+	issueNumber int
+	issueReq    *github.IssueRequest
+}
+
+func (r *updateIssueRequest) Do(ctx context.Context, ghClinet *github.Client) error {
+	log.Printf("update issue on %s/%s#%d: %#v", r.owner, r.repo, r.issueNumber, r.issueReq)
+	if _, _, err := ghClinet.Issues.Edit(ctx, r.owner, r.repo, r.issueNumber, r.issueReq); err != nil {
+		return err
+	}
+	return nil
+}
+
 type createIssueCommentRequest struct {
 	owner       string
 	repo        string
@@ -177,7 +192,7 @@ func (r *createIssueCommentRequest) Do(ctx context.Context, ghClient *github.Cli
 	return nil
 }
 
-func newIssueRequest(sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) request {
+func newIssueRequests(sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) []request {
 	switch op.Kind {
 	case domain.OpCreate:
 		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
@@ -199,19 +214,32 @@ func newIssueRequest(sourceRepo, targetRepo *config.Repository, op *domain.Issue
 		if op.Issue.Milestone != nil && op.Issue.Milestone.Number != nil {
 			issueReq.Milestone = op.Issue.Milestone.Number
 		}
-		return &createIssueRequest{
+		reqs := []request{&createIssueRequest{
 			owner:    targetRepo.Owner,
 			repo:     targetRepo.Name,
 			issueReq: issueReq,
-		}
+		}}
+		return reqs
 	case domain.OpUpdate:
 		body := fmt.Sprintf("This issue or P-R referenced as %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
-		return &createIssueCommentRequest{
-			owner:       targetRepo.Owner,
-			repo:        targetRepo.Name,
-			issueNumber: op.Issue.GetNumber(),
-			body:        body,
+		labels := []string{"migrated"}
+		reqs := []request{
+			&createIssueCommentRequest{
+				owner:       targetRepo.Owner,
+				repo:        targetRepo.Name,
+				issueNumber: op.Issue.GetNumber(),
+				body:        body,
+			},
+			&updateIssueRequest{
+				owner:       targetRepo.Owner,
+				repo:        targetRepo.Name,
+				issueNumber: op.Issue.GetNumber(),
+				issueReq: &github.IssueRequest{
+					Labels: &labels,
+				},
+			},
 		}
+		return reqs
 	default:
 		return nil
 	}
@@ -310,22 +338,16 @@ func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issues from source repository: %w", err)
 	}
-	for i, issue := range sourceIssues {
-		log.Printf("#%02d issue=%s", i, issue)
-	}
 
 	targetIssues, err := u.sourceService.SlurpIssues(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issues from target repository: %w", err)
 	}
-	for i, issue := range targetIssues {
-		log.Printf("#%02d issue=%s", i, issue)
-	}
 
 	reqs := []request{}
 	ops := domain.NewIssueOpsList(sourceIssues, targetIssues)
 	for _, op := range ops {
-		reqs = append(reqs, newIssueRequest(source, target, op))
+		reqs = append(reqs, newIssueRequests(source, target, op)...)
 	}
 	return reqs, nil
 }
