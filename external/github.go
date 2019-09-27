@@ -69,3 +69,20 @@ func (s *GitHubService) SlurpIssues(ctx context.Context, owner, repo string) ([]
 	}
 	return issues, nil
 }
+
+func (s *GitHubService) SlurpIssueComments(ctx context.Context, owner, repo string, issueNumber int) ([]*github.IssueComment, error) {
+	opts := &github.IssueListCommentsOptions{ListOptions: github.ListOptions{PerPage: 100}}
+	issueComments := []*github.IssueComment{}
+	for {
+		comments, resp, err := s.client.Issues.ListComments(ctx, owner, repo, issueNumber, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list issue comments: %w", err)
+		}
+		issueComments = append(issueComments, comments...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return issueComments, nil
+}
