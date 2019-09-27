@@ -9,6 +9,8 @@ import (
 
 func strRef(s string) *string { return &s }
 
+func intRef(i int) *int { return &i }
+
 func Test_milestoneEq(t *testing.T) {
 	type args struct {
 		l *milestone
