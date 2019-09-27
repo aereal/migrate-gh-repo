@@ -39,9 +39,6 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 	for _, s := range sourceIssues {
 		src := &issue{s}
 		defaultKind := OpCreate
-		if src.IsPullRequest() {
-			defaultKind = OpUpdate
-		}
 		kinds[src.Key().String()] = defaultKind
 		for _, t := range targetIssues {
 			target := &issue{t}
