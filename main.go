@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"github.com/aereal/migrate-gh-repo/config"
+	"github.com/aereal/migrate-gh-repo/usecase"
 )
 
 func main() {
@@ -20,5 +22,25 @@ func run(argv []string) error {
 		return err
 	}
 	log.Printf("config = %#v", cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sourceClient, err := cfg.Source.GitHubClient(ctx)
+	if err != nil {
+		return err
+	}
+	targetClient, err := cfg.Target.GitHubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	u, err := usecase.New(sourceClient, targetClient)
+	if err != nil {
+		return err
+	}
+	if err := u.Migrate(ctx, cfg.Source.Repo, cfg.Target.Repo); err != nil {
+		return err
+	}
 	return nil
 }
