@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/aereal/migrate-gh-repo/config"
 	"github.com/aereal/migrate-gh-repo/domain"
@@ -140,9 +141,17 @@ func (u *Usecase) Migrate(ctx context.Context, source, target *config.Repository
 	if err != nil {
 		return err
 	}
+	interval := time.Second * 1
+	tried := 0
+	intervalCount := 10
 	for _, r := range reqs {
 		if err := r.Do(ctx, u.targetClient); err != nil {
 			return err
+		}
+		tried++
+		if tried >= intervalCount {
+			time.Sleep(interval)
+			tried = 0
 		}
 	}
 	return nil
