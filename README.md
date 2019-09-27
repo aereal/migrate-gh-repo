@@ -1,8 +1,12 @@
 # migrate-gh-repo
 
-- [ ] issues
-  - [ ] labels
-  - [ ] milestones
-  - [ ] comments
+The script to migrate repositories with above constraints:
+
+- labels and milestones are fully migrated to target repository
+- issues that refers source created on target repository
+
+- [x] issues
+  - [x] labels
+  - [x] milestones
   - [ ] users (mapping)
-- [ ] Pull Requests (placeholder issues)
+- [x] Pull Requests (placeholder issues)
