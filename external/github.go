@@ -20,7 +20,7 @@ type GitHubService struct {
 }
 
 func (s *GitHubService) SlurpMilestones(ctx context.Context, owner, repo string) ([]*github.Milestone, error) {
-	opts := &github.MilestoneListOptions{State: "all"}
+	opts := &github.MilestoneListOptions{State: "all", ListOptions: github.ListOptions{PerPage: 100}}
 	milestones := []*github.Milestone{}
 	for {
 		ms, resp, err := s.client.Issues.ListMilestones(ctx, owner, repo, opts)
@@ -37,7 +37,7 @@ func (s *GitHubService) SlurpMilestones(ctx context.Context, owner, repo string)
 }
 
 func (s *GitHubService) SlurpLabels(ctx context.Context, owner, repo string) ([]*github.Label, error) {
-	opts := &github.ListOptions{}
+	opts := &github.ListOptions{PerPage: 100}
 	labels := []*github.Label{}
 	for {
 		ls, resp, err := s.client.Issues.ListLabels(ctx, owner, repo, opts)
@@ -54,7 +54,7 @@ func (s *GitHubService) SlurpLabels(ctx context.Context, owner, repo string) ([]
 }
 
 func (s *GitHubService) SlurpIssues(ctx context.Context, owner, repo string) ([]*github.Issue, error) {
-	opts := &github.IssueListByRepoOptions{State: "all", Direction: "asc"}
+	opts := &github.IssueListByRepoOptions{State: "all", Direction: "asc", ListOptions: github.ListOptions{PerPage: 100}}
 	issues := []*github.Issue{}
 	for {
 		is, resp, err := s.client.Issues.ListByRepo(ctx, owner, repo, opts)
