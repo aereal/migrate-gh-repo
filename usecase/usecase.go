@@ -339,7 +339,7 @@ func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config
 		return nil, fmt.Errorf("failed to fetch issues from source repository: %w", err)
 	}
 
-	targetIssues, err := u.sourceService.SlurpIssues(ctx, target.Owner, target.Name)
+	targetIssues, err := u.targetService.SlurpIssues(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issues from target repository: %w", err)
 	}
