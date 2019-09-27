@@ -69,20 +69,3 @@ func (s *GitHubService) SlurpIssues(ctx context.Context, owner, repo string) ([]
 	}
 	return issues, nil
 }
-
-func (s *GitHubService) SlurpPullRequests(ctx context.Context, owner, repo string) ([]*github.PullRequest, error) {
-	opts := &github.PullRequestListOptions{State: "all"}
-	pullRequests := []*github.PullRequest{}
-	for {
-		prs, resp, err := s.client.PullRequests.List(ctx, owner, repo, opts)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list pull requests: %w", err)
-		}
-		pullRequests = append(pullRequests, prs...)
-		opts.Page = resp.NextPage
-		if resp.NextPage == 0 {
-			break
-		}
-	}
-	return pullRequests, nil
-}
