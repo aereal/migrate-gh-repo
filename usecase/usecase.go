@@ -145,6 +145,59 @@ func newLabelRequest(repo *config.Repository, op *domain.LabelOp) request {
 	}
 }
 
+type createIssueRequest struct {
+	owner string
+	repo  string
+	issue *github.Issue
+}
+
+func (r *createIssueRequest) Do(ctx context.Context, ghClient *github.Client) error {
+	log.Printf("create issue on %s/%s: %s", r.owner, r.repo, r.issue)
+	return nil
+}
+
+type createIssueCommentRequest struct {
+	owner       string
+	repo        string
+	issueNumber int
+	body        string
+}
+
+func (r *createIssueCommentRequest) Do(ctx context.Context, ghClient *github.Client) error {
+	issueComment := &github.IssueComment{Body: &r.body}
+	log.Printf("create issue comment on %s/%s#%d issueComment=%s", r.owner, r.repo, r.issueNumber, issueComment)
+	return nil
+}
+
+func newIssueRequest(sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) request {
+	switch op.Kind {
+	case domain.OpCreate:
+		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
+		issue := &github.Issue{
+			Body:      &body,
+			Assignees: op.Issue.Assignees,
+			Milestone: op.Issue.Milestone,
+			Labels:    op.Issue.Labels,
+			Title:     op.Issue.Title,
+		}
+		return &createIssueRequest{
+			owner: targetRepo.Owner,
+			repo:  targetRepo.Name,
+			issue: issue,
+		}
+	case domain.OpUpdate:
+		body := fmt.Sprintf("This issue or P-R referenced as %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
+		return &createIssueCommentRequest{
+			owner:       targetRepo.Owner,
+			repo:        targetRepo.Name,
+			issueNumber: op.Issue.GetNumber(),
+			body:        body,
+		}
+	default:
+		return nil
+	}
+}
+
 func (u *Usecase) Migrate(ctx context.Context, source, target *config.Repository) error {
 	if source == nil || target == nil {
 		return fmt.Errorf("Both of from/to repository must be given")
@@ -234,6 +287,26 @@ func (u *Usecase) buildLabelRequests(ctx context.Context, source, target *config
 }
 
 func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config.Repository) ([]request, error) {
+	sourceIssues, err := u.sourceService.SlurpIssues(ctx, source.Owner, source.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch issues from source repository: %w", err)
+	}
+	for i, issue := range sourceIssues {
+		log.Printf("#%02d issue=%s", i, issue)
+	}
+
+	targetIssues, err := u.sourceService.SlurpIssues(ctx, target.Owner, target.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch issues from target repository: %w", err)
+	}
+	for i, issue := range targetIssues {
+		log.Printf("#%02d issue=%s", i, issue)
+	}
+
 	reqs := []request{}
+	ops := domain.NewIssueOpsList(sourceIssues, targetIssues)
+	for _, op := range ops {
+		reqs = append(reqs, newIssueRequest(source, target, op))
+	}
 	return reqs, nil
 }
