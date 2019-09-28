@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func New(sourceClient, targetClient *github.Client) (*Usecase, error) {
+func New(userResolver *domain.UserAliasResolver, sourceClient, targetClient *github.Client) (*Usecase, error) {
 	if sourceClient == nil || targetClient == nil {
 		return nil, fmt.Errorf("both of sourceClient and targetClient must be given")
 	}
@@ -27,18 +27,20 @@ func New(sourceClient, targetClient *github.Client) (*Usecase, error) {
 	}
 
 	return &Usecase{
-		sourceClient:  sourceClient,
-		targetClient:  targetClient,
-		sourceService: sourceService,
-		targetService: targetService,
+		sourceClient:      sourceClient,
+		targetClient:      targetClient,
+		sourceService:     sourceService,
+		targetService:     targetService,
+		userAliasResolver: userResolver,
 	}, nil
 }
 
 type Usecase struct {
-	sourceClient  *github.Client
-	sourceService *external.GitHubService
-	targetClient  *github.Client
-	targetService *external.GitHubService
+	sourceClient      *github.Client
+	sourceService     *external.GitHubService
+	targetClient      *github.Client
+	targetService     *external.GitHubService
+	userAliasResolver *domain.UserAliasResolver
 }
 
 type request interface {
@@ -211,13 +213,14 @@ func (r *createIssueCommentRequest) Do(ctx context.Context, ghClient *github.Cli
 	return nil
 }
 
-func newIssueRequests(sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) []request {
+func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) []request {
 	switch op.Kind {
 	case domain.OpCreate:
 		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
 		assignees := []string{}
 		for _, assignee := range op.Issue.Assignees {
-			assignees = append(assignees, assignee.GetLogin())
+			userOnTarget, _ := resolver.AssumeResolved(assignee.GetLogin())
+			assignees = append(assignees, userOnTarget)
 		}
 		labels := []string{}
 		for _, label := range op.Issue.Labels {
@@ -362,7 +365,7 @@ func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config
 	reqs := []request{}
 	ops := domain.NewIssueOpsList(sourceIssues, targetIssues)
 	for _, op := range ops {
-		reqs = append(reqs, newIssueRequests(source, target, op)...)
+		reqs = append(reqs, newIssueRequests(u.userAliasResolver, source, target, op)...)
 	}
 	return reqs, nil
 }

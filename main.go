@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aereal/migrate-gh-repo/config"
+	"github.com/aereal/migrate-gh-repo/domain"
 	"github.com/aereal/migrate-gh-repo/usecase"
 )
 
@@ -35,7 +36,8 @@ func run(argv []string) error {
 		return err
 	}
 
-	u, err := usecase.New(sourceClient, targetClient)
+	resolver := domain.NewUserAliasResolver(cfg.UserAliases)
+	u, err := usecase.New(resolver, sourceClient, targetClient)
 	if err != nil {
 		return err
 	}
