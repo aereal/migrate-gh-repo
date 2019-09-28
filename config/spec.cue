@@ -2,6 +2,10 @@ package config
 
 import "strings"
 
+UserAliases :: {
+	<from>: !=""
+}
+
 Repository :: {
 	fullName: !=""
 	parts:    strings.Split(fullName, "/")
@@ -18,3 +22,4 @@ Endpoint :: {
 
 source: Endpoint
 target: Endpoint
+userAliases: UserAliases
