@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aereal/migrate-gh-repo/config"
@@ -152,7 +153,16 @@ type createIssueRequest struct {
 }
 
 func (r *createIssueRequest) Do(ctx context.Context, ghClient *github.Client) error {
-	log.Printf("create issue on %s/%s: %#v", r.owner, r.repo, r.issueReq)
+	log.Printf(
+		"create issue on %s/%s: title=%q body=%q labels=[%s] assignees=[%s] state=%q milestone.id=%d",
+		r.owner, r.repo,
+		r.issueReq.GetTitle(),
+		r.issueReq.GetBody(),
+		strings.Join(r.issueReq.GetLabels(), ", "),
+		strings.Join(r.issueReq.GetAssignees(), ", "),
+		r.issueReq.GetState(),
+		r.issueReq.GetMilestone(),
+	)
 	_, _, err := ghClient.Issues.Create(ctx, r.owner, r.repo, r.issueReq)
 	if err != nil {
 		return err
@@ -168,7 +178,16 @@ type updateIssueRequest struct {
 }
 
 func (r *updateIssueRequest) Do(ctx context.Context, ghClinet *github.Client) error {
-	log.Printf("update issue on %s/%s#%d: %#v", r.owner, r.repo, r.issueNumber, r.issueReq)
+	log.Printf(
+		"update issue on %s/%s#%d: title=%q body=%q labels=[%s] assignees=[%s] state=%q milestone.id=%d",
+		r.owner, r.repo, r.issueNumber,
+		r.issueReq.GetTitle(),
+		r.issueReq.GetBody(),
+		strings.Join(r.issueReq.GetLabels(), ", "),
+		strings.Join(r.issueReq.GetAssignees(), ", "),
+		r.issueReq.GetState(),
+		r.issueReq.GetMilestone(),
+	)
 	if _, _, err := ghClinet.Issues.Edit(ctx, r.owner, r.repo, r.issueNumber, r.issueReq); err != nil {
 		return err
 	}
@@ -298,12 +317,10 @@ func (u *Usecase) buildMilestoneRequests(ctx context.Context, source, target *co
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch milestones from source repository: %w", err)
 	}
-	log.Printf("source milestones = %#v", sourceMilestones)
 	targetMilestones, err := u.targetService.SlurpMilestones(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch milestones from target repository: %w", err)
 	}
-	log.Printf("target milestones = %#v", targetMilestones)
 
 	reqs := []request{}
 	ops := domain.NewMilestoneOpsList(sourceMilestones, targetMilestones)
@@ -318,12 +335,10 @@ func (u *Usecase) buildLabelRequests(ctx context.Context, source, target *config
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch labels from source repository: %w", err)
 	}
-	log.Printf("source labels = %#v", sourceLabels)
 	targetLabels, err := u.targetService.SlurpLabels(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch labels from target repository: %w", err)
 	}
-	log.Printf("target labels = %#v", targetLabels)
 
 	reqs := []request{}
 	ops := domain.NewLabelOpsList(sourceLabels, targetLabels)
