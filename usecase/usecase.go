@@ -216,22 +216,22 @@ func (r *createIssueCommentRequest) Do(ctx context.Context, ghClient *github.Cli
 func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) []request {
 	switch op.Kind {
 	case domain.OpCreate:
-		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
+		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)\noriginal assignees: ", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
 		assignees := []string{}
 		for _, assignee := range op.Issue.Assignees {
 			userOnTarget, _ := resolver.AssumeResolved(assignee.GetLogin())
 			assignees = append(assignees, userOnTarget)
+			body += fmt.Sprintf("\n- @%s", userOnTarget)
 		}
 		labels := []string{}
 		for _, label := range op.Issue.Labels {
 			labels = append(labels, label.GetName())
 		}
 		issueReq := &github.IssueRequest{
-			Body:      &body,
-			Assignees: &assignees,
-			Labels:    &labels,
-			Title:     op.Issue.Title,
-			State:     op.Issue.State,
+			Body:   &body,
+			Labels: &labels,
+			Title:  op.Issue.Title,
+			State:  op.Issue.State,
 		}
 		if op.Issue.Milestone != nil && op.Issue.Milestone.Number != nil {
 			issueReq.Milestone = op.Issue.Milestone.Number
