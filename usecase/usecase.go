@@ -241,6 +241,16 @@ func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo
 			repo:     targetRepo.Name,
 			issueReq: issueReq,
 		}}
+		if op.Issue.GetState() == "closed" {
+			reqs = append(reqs, &updateIssueRequest{
+				owner:       targetRepo.Owner,
+				repo:        targetRepo.Name,
+				issueNumber: op.Issue.GetNumber(),
+				issueReq: &github.IssueRequest{
+					State: op.Issue.State,
+				},
+			})
+		}
 		return reqs
 	case domain.OpUpdate:
 		body := fmt.Sprintf("This issue or P-R referenced as %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
