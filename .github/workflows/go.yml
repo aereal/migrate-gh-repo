@@ -10,6 +10,7 @@ jobs:
         uses: actions/setup-go@v1.0.0
         with:
           go-version: 1.13.x
+          version: 1.13.x
       -
         name: test
         run: |
