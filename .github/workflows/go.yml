@@ -11,3 +11,5 @@ jobs:
       -
         name: test
         run: go test ./...
+        env:
+          GO111MODULE: on
