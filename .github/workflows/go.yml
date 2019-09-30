@@ -1,12 +1,13 @@
 on: [push]
 jobs:
-  runs-on: ubuntu-latest
-  steps:
-    -
-      uses: actions/checkout@master
-    -
-      name: Setup Go for use with actions
-      uses: actions/setup-go@v1.0.0
-    -
-      name: test
-      run: go test ./...
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        uses: actions/checkout@master
+      -
+        name: Setup Go for use with actions
+        uses: actions/setup-go@v1.0.0
+      -
+        name: test
+        run: go test ./...
