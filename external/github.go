@@ -103,3 +103,20 @@ func (s *GitHubService) SlurpProjects(ctx context.Context, owner, repo string) (
 	}
 	return projects, nil
 }
+
+func (s *GitHubService) SlurpProjectColumns(ctx context.Context, projectID int64) ([]*github.ProjectColumn, error) {
+	opts := &github.ListOptions{PerPage: 100}
+	columns := []*github.ProjectColumn{}
+	for {
+		cols, resp, err := s.client.Projects.ListProjectColumns(ctx, projectID, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project columns: %w", err)
+		}
+		columns = append(columns, cols...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return columns, nil
+}
