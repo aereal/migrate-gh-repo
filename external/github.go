@@ -86,3 +86,20 @@ func (s *GitHubService) SlurpIssueComments(ctx context.Context, owner, repo stri
 	}
 	return issueComments, nil
 }
+
+func (s *GitHubService) SlurpProjects(ctx context.Context, owner, repo string) ([]*github.Project, error) {
+	opts := &github.ProjectListOptions{State: "all", ListOptions: github.ListOptions{PerPage: 100}}
+	projects := []*github.Project{}
+	for {
+		pjs, resp, err := s.client.Repositories.ListProjects(ctx, owner, repo, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list projects: %w", err)
+		}
+		projects = append(projects, pjs...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return projects, nil
+}
