@@ -90,5 +90,12 @@ func (u *Usecase) buildRequests(ctx context.Context, source, target *config.Repo
 		return nil, err
 	}
 	reqs = append(reqs, issueReqs...)
+
+	projectReqs, err := u.buildProjectRequests(ctx, source, target)
+	if err != nil {
+		return nil, err
+	}
+	reqs = append(reqs, projectReqs...)
+
 	return reqs, nil
 }
