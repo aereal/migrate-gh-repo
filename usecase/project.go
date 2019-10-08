@@ -15,7 +15,7 @@ func (u *Usecase) buildProjectRequests(ctx context.Context, source, target *conf
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch projects from source repository: %w", err)
 	}
-	targetProjects, err := u.sourceService.SlurpProjects(ctx, target.Owner, target.Name)
+	targetProjects, err := u.targetService.SlurpProjects(ctx, target.Owner, target.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch projects from target repository: %w", err)
 	}
