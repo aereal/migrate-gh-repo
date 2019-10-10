@@ -28,7 +28,7 @@ func (p *project) Eq(other Equalable) bool {
 		return false
 	}
 	if otherProject, ok := other.(*project); ok {
-		return p.GetName() == otherProject.GetName() // TODO
+		return p.GetName() == otherProject.GetName()
 	}
 	return false
 }
@@ -39,15 +39,17 @@ func NewProjectOpsList(sourceIssues, targetIssues []*github.Project) ProjectOpsL
 	}
 
 	kinds := map[string]OpKind{}
+	mapping := map[string]*github.Project{}
 	for _, s := range sourceIssues {
 		src := &project{s}
 		defaultKind := OpCreate
 		kinds[src.Key().String()] = defaultKind
 		for _, t := range targetIssues {
 			target := &project{t}
-			// project does not support update
-			if src.Eq(target) {
-				kinds[src.Key().String()] = OpNothing
+			// tell update (creating columns) if target project has same name
+			if src.Key().Eq(target.Key()) {
+				kinds[src.Key().String()] = OpUpdate
+				mapping[src.Key().String()] = t
 			}
 		}
 	}
@@ -61,6 +63,15 @@ func NewProjectOpsList(sourceIssues, targetIssues []*github.Project) ProjectOpsL
 				Kind:    OpCreate,
 				Project: s,
 			})
+		case OpUpdate:
+			op := &ProjectOp{
+				Kind:    OpUpdate,
+				Project: s,
+			}
+			if target, ok := mapping[src.Key().String()]; ok {
+				op.TargetProject = target
+			}
+			ops = append(ops, op)
 		default:
 		}
 	}
@@ -79,8 +90,9 @@ func (l ProjectOpsList) String() string {
 }
 
 type ProjectOp struct {
-	Kind    OpKind
-	Project *github.Project
+	Kind          OpKind
+	Project       *github.Project
+	TargetProject *github.Project // maybe nil
 }
 
 func (op *ProjectOp) String() string {

@@ -58,7 +58,17 @@ func TestNewProjectOpsList(t *testing.T) {
 					},
 				},
 			},
-			want: ProjectOpsList{},
+			want: ProjectOpsList{
+				&ProjectOp{
+					Kind: OpUpdate,
+					Project: &github.Project{
+						Name: strRef("kanban"),
+					},
+					TargetProject: &github.Project{
+						Name: strRef("kanban"),
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
