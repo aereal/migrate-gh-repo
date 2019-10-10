@@ -20,17 +20,14 @@ func (p *project) Key() *Key {
 	}
 }
 
-func (p *project) Eq(other Equalable) bool {
+func (p *project) eq(other *project) bool {
 	if p == nil || other == nil {
 		return false
 	}
 	if !p.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherProject, ok := other.(*project); ok {
-		return p.GetName() == otherProject.GetName()
-	}
-	return false
+	return p.GetName() == other.GetName()
 }
 
 func NewProjectOpsList(sourceIssues, targetIssues []*github.Project) ProjectOpsList {

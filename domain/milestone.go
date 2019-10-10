@@ -17,17 +17,14 @@ func (m *milestone) Key() *Key {
 	return &Key{kind: "milestone", repr: m.GetTitle()}
 }
 
-func (m *milestone) Eq(other Equalable) bool {
+func (m *milestone) eq(other *milestone) bool {
 	if m == nil || other == nil {
 		return false
 	}
 	if !m.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherMilestone, ok := other.(*milestone); ok {
-		return m.GetDescription() == otherMilestone.GetDescription() && m.GetDueOn() == otherMilestone.GetDueOn()
-	}
-	return false
+	return m.GetDescription() == other.GetDescription() && m.GetDueOn() == other.GetDueOn()
 }
 
 func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone) MilestoneOpsList {
@@ -42,7 +39,7 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 		for _, tgt := range targetMilestones {
 			tgtm := &milestone{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
-				if srcm.Eq(tgtm) { // completely equal
+				if srcm.eq(tgtm) { // completely equal
 					kinds[srcm.Key().String()] = OpNothing
 				} else {
 					kinds[srcm.Key().String()] = OpUpdate

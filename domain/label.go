@@ -17,17 +17,14 @@ func (l *label) Key() *Key {
 	return &Key{kind: "label", repr: l.GetName()}
 }
 
-func (l *label) Eq(other Equalable) bool {
+func (l *label) eq(other *label) bool {
 	if l == nil || other == nil {
 		return false
 	}
 	if !l.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherLabel, ok := other.(*label); ok {
-		return l.GetColor() == otherLabel.GetColor() && l.GetDescription() == otherLabel.GetDescription()
-	}
-	return false
+	return l.GetColor() == other.GetColor() && l.GetDescription() == other.GetDescription()
 }
 
 type LabelOpsList []*LabelOp
@@ -62,7 +59,7 @@ func NewLabelOpsList(sourceLabels, targetLabels []*github.Label) LabelOpsList {
 		for _, tgt := range targetLabels {
 			tgtm := &label{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
-				if srcm.Eq(tgtm) { // completely equal
+				if srcm.eq(tgtm) { // completely equal
 					kinds[srcm.Key().String()] = OpNothing
 				} else {
 					kinds[srcm.Key().String()] = OpUpdate

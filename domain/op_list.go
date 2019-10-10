@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+type hasKey interface {
+	Key() *Key
+}
+
 type Key struct {
 	kind string
 	repr string
@@ -18,11 +22,6 @@ func (k *Key) Eq(other *Key) bool {
 		return false
 	}
 	return k.String() == other.String()
-}
-
-type Equalable interface {
-	Key() *Key
-	Eq(other Equalable) bool
 }
 
 type OpKind string
