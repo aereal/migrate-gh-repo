@@ -120,3 +120,20 @@ func (s *GitHubService) SlurpProjectColumns(ctx context.Context, projectID int64
 	}
 	return columns, nil
 }
+
+func (s *GitHubService) SlurpProjectCards(ctx context.Context, columnID int64) ([]*github.ProjectCard, error) {
+	opts := &github.ProjectCardListOptions{ListOptions: github.ListOptions{PerPage: 100}}
+	cards := []*github.ProjectCard{}
+	for {
+		cs, resp, err := s.client.Projects.ListProjectCards(ctx, columnID, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project cards: %w", err)
+		}
+		cards = append(cards, cs...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return cards, nil
+}
