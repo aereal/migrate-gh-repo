@@ -32,17 +32,17 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, src := range sourceMilestones {
 		srcm := &milestone{src}
-		kinds[srcm.Key().String()] = OpCreate
+		kinds.requestCreate(srcm)
 		for _, tgt := range targetMilestones {
 			tgtm := &milestone{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
 				if srcm.eq(tgtm) { // completely equal
-					kinds[srcm.Key().String()] = OpNothing
+					kinds.requestNothing(srcm)
 				} else {
-					kinds[srcm.Key().String()] = OpUpdate
+					kinds.requestUpdate(srcm)
 				}
 			}
 		}
@@ -51,7 +51,7 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 	ops := []*MilestoneOp{}
 	for _, src := range sourceMilestones {
 		srcm := &milestone{src}
-		switch kinds[srcm.Key().String()] {
+		switch kinds.get(srcm) {
 		case OpCreate:
 			ops = append(ops, &MilestoneOp{
 				Kind:      OpCreate,

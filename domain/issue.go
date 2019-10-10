@@ -44,18 +44,17 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, s := range sourceIssues {
 		src := &issue{s}
-		defaultKind := OpCreate
-		kinds[src.Key().String()] = defaultKind
+		kinds.requestCreate(src)
 		for _, t := range targetIssues {
 			target := &issue{t}
 			if src.Key().Eq(target.Key()) {
 				if target.hasMigrated() || src.eq(target) { // completely equal
-					kinds[src.Key().String()] = OpNothing
+					kinds.requestNothing(src)
 				} else {
-					kinds[src.Key().String()] = OpUpdate
+					kinds.requestUpdate(src)
 				}
 			}
 		}
@@ -64,7 +63,7 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 	ops := []*IssueOp{}
 	for _, s := range sourceIssues {
 		src := &issue{s}
-		switch kinds[src.Key().String()] {
+		switch kinds.get(src) {
 		case OpCreate:
 			ops = append(ops, &IssueOp{
 				Kind:  OpCreate,

@@ -52,17 +52,17 @@ func NewLabelOpsList(sourceLabels, targetLabels []*github.Label) LabelOpsList {
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, src := range sourceLabels {
 		srcm := &label{src}
-		kinds[srcm.Key().String()] = OpCreate
+		kinds.requestCreate(srcm)
 		for _, tgt := range targetLabels {
 			tgtm := &label{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
 				if srcm.eq(tgtm) { // completely equal
-					kinds[srcm.Key().String()] = OpNothing
+					kinds.requestNothing(srcm)
 				} else {
-					kinds[srcm.Key().String()] = OpUpdate
+					kinds.requestNothing(srcm)
 				}
 			}
 		}
@@ -71,7 +71,7 @@ func NewLabelOpsList(sourceLabels, targetLabels []*github.Label) LabelOpsList {
 	ops := []*LabelOp{}
 	for _, src := range sourceLabels {
 		srcm := &label{src}
-		switch kinds[srcm.Key().String()] {
+		switch kinds.get(srcm) {
 		case OpCreate:
 			ops = append(ops, &LabelOp{
 				Kind:  OpCreate,

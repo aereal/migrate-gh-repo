@@ -35,17 +35,16 @@ func NewProjectOpsList(sourceIssues, targetIssues []*github.Project) ProjectOpsL
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	mapping := map[string]*github.Project{}
 	for _, s := range sourceIssues {
 		src := &project{s}
-		defaultKind := OpCreate
-		kinds[src.Key().String()] = defaultKind
+		kinds.requestCreate(src)
 		for _, t := range targetIssues {
 			target := &project{t}
 			// tell update (creating columns) if target project has same name
 			if src.Key().Eq(target.Key()) {
-				kinds[src.Key().String()] = OpUpdate
+				kinds.requestUpdate(src)
 				mapping[src.Key().String()] = t
 			}
 		}
@@ -54,7 +53,7 @@ func NewProjectOpsList(sourceIssues, targetIssues []*github.Project) ProjectOpsL
 	ops := []*ProjectOp{}
 	for _, s := range sourceIssues {
 		src := &project{s}
-		switch kinds[src.Key().String()] {
+		switch kinds.get(src) {
 		case OpCreate:
 			ops = append(ops, &ProjectOp{
 				Kind:    OpCreate,
