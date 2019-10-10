@@ -30,7 +30,7 @@ func (c *projectColumn) eq(other *projectColumn) bool {
 	return c.GetName() == other.GetName()
 }
 
-func NewProjectColumnOpsList(sourceColumns, targetColumns []*github.ProjectColumn) ProjectColumnOpsList {
+func NewProjectColumnOpsList(sourceColumns, targetColumns []*github.ProjectColumn, sourceProject *github.Project, targetProject *github.Project) ProjectColumnOpsList {
 	if len(sourceColumns) == 0 && len(targetColumns) == 0 {
 		return nil
 	}
@@ -57,6 +57,7 @@ func NewProjectColumnOpsList(sourceColumns, targetColumns []*github.ProjectColum
 			ops = append(ops, &ProjectColumnOp{
 				Kind:          OpCreate,
 				ProjectColumn: s,
+				Project:       targetProject,
 			})
 		case OpUpdate:
 			op := &ProjectColumnOp{
@@ -84,6 +85,7 @@ func (l ProjectColumnOpsList) String() string {
 type ProjectColumnOp struct {
 	Kind          OpKind
 	ProjectColumn *github.ProjectColumn
+	Project       *github.Project
 }
 
 func (op *ProjectColumnOp) String() string {

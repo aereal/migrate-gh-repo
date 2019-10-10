@@ -11,6 +11,8 @@ func TestNewProjectColumnOpsList(t *testing.T) {
 	type args struct {
 		sourceColumns []*github.ProjectColumn
 		targetColumns []*github.ProjectColumn
+		sourceProject *github.Project
+		targetProject *github.Project
 	}
 	tests := []struct {
 		name string
@@ -70,7 +72,7 @@ func TestNewProjectColumnOpsList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewProjectColumnOpsList(tt.args.sourceColumns, tt.args.targetColumns); !reflect.DeepEqual(got, tt.want) {
+			if got := NewProjectColumnOpsList(tt.args.sourceColumns, tt.args.targetColumns, tt.args.sourceProject, tt.args.targetProject); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewProjectColumnOpsList() = %v, want %v", got, tt.want)
 			}
 		})
