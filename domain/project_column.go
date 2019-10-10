@@ -64,6 +64,9 @@ func NewProjectColumnOpsList(sourceColumns, targetColumns []*github.ProjectColum
 				Kind:          OpUpdate,
 				ProjectColumn: s,
 			}
+			if target, ok := mapping[src.Key().String()]; ok {
+				op.TargetProjectColumn = target
+			}
 			ops = append(ops, op)
 		default:
 		}
@@ -83,9 +86,10 @@ func (l ProjectColumnOpsList) String() string {
 }
 
 type ProjectColumnOp struct {
-	Kind          OpKind
-	ProjectColumn *github.ProjectColumn
-	Project       *github.Project
+	Kind                OpKind
+	ProjectColumn       *github.ProjectColumn
+	TargetProjectColumn *github.ProjectColumn
+	Project             *github.Project
 }
 
 func (op *ProjectColumnOp) String() string {

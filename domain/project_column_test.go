@@ -66,6 +66,9 @@ func TestNewProjectColumnOpsList(t *testing.T) {
 					ProjectColumn: &github.ProjectColumn{
 						Name: strRef("To Do"),
 					},
+					TargetProjectColumn: &github.ProjectColumn{
+						Name: strRef("To Do"),
+					},
 				},
 			},
 		},
