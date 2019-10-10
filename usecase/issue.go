@@ -73,8 +73,17 @@ func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo
 		}
 		return reqs
 	case domain.OpUpdate:
+		log.Printf("update issue")
 		body := fmt.Sprintf("This issue or P-R referenced as %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
 		labels := []string{"migrated"}
+		assignees := []string{}
+		for _, u := range op.Issue.Assignees {
+			userOnTarget, _ := resolver.AssumeResolved(u.GetLogin())
+			assignees = append(assignees, userOnTarget)
+		}
+		for _, l := range op.Issue.Labels {
+			labels = append(labels, l.GetName())
+		}
 		reqs := []request{
 			&createIssueCommentRequest{
 				owner:       targetRepo.Owner,
@@ -87,7 +96,8 @@ func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo
 				repo:        targetRepo.Name,
 				issueNumber: op.Issue.GetNumber(),
 				issueReq: &github.IssueRequest{
-					Labels: &labels,
+					Labels:    &labels,
+					Assignees: &assignees,
 				},
 			},
 		}
