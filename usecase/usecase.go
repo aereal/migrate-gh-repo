@@ -25,20 +25,22 @@ func New(userResolver *domain.UserAliasResolver, sourceClient, targetClient *git
 	}
 
 	return &Usecase{
-		sourceClient:      sourceClient,
-		targetClient:      targetClient,
-		sourceService:     sourceService,
-		targetService:     targetService,
-		userAliasResolver: userResolver,
+		sourceClient:         sourceClient,
+		targetClient:         targetClient,
+		sourceService:        sourceService,
+		targetService:        targetService,
+		userAliasResolver:    userResolver,
+		issueNumberIDMapping: map[int]int64{},
 	}, nil
 }
 
 type Usecase struct {
-	sourceClient      *github.Client
-	sourceService     *external.GitHubService
-	targetClient      *github.Client
-	targetService     *external.GitHubService
-	userAliasResolver *domain.UserAliasResolver
+	sourceClient         *github.Client
+	sourceService        *external.GitHubService
+	targetClient         *github.Client
+	targetService        *external.GitHubService
+	userAliasResolver    *domain.UserAliasResolver
+	issueNumberIDMapping map[int]int64 // number -> id
 }
 
 type request interface {
@@ -91,7 +93,7 @@ func (u *Usecase) buildRequests(ctx context.Context, source, target *config.Repo
 	}
 	reqs = append(reqs, issueReqs...)
 
-	projectReqs, err := u.buildProjectRequests(ctx, source, target)
+	projectReqs, err := u.buildProjectRequests(ctx, source, target, u.issueNumberIDMapping)
 	if err != nil {
 		return nil, err
 	}
