@@ -2,12 +2,16 @@ package domain
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/google/go-github/github"
 )
 
 type issue struct {
 	*github.Issue
+	normalizedAssignees string
+	normalizedLabels    string
 }
 
 func (i *issue) hasMigrated() bool {
@@ -36,7 +40,36 @@ func (i *issue) eq(other *issue) bool {
 	if !i.Key().Eq(other.Key()) {
 		return false
 	}
-	return i.GetTitle() == other.GetTitle()
+	return i.GetTitle() == other.GetTitle() && i.assignees() == other.assignees() && i.labels() == other.labels()
+}
+
+func (i *issue) labels() string {
+	if i.normalizedLabels != "" {
+		return i.normalizedAssignees
+	}
+	names := []string{}
+	for _, l := range i.Labels {
+		names = append(names, l.GetName())
+	}
+	sort.Strings(names)
+	i.normalizedLabels = strings.Join(names, ",")
+
+	return i.normalizedLabels
+}
+
+func (i *issue) assignees() string {
+	if i.normalizedAssignees != "" {
+		return i.normalizedAssignees
+	}
+
+	names := []string{}
+	for _, u := range i.Assignees {
+		names = append(names, u.GetLogin())
+	}
+	sort.Strings(names)
+	i.normalizedAssignees = strings.Join(names, ",")
+
+	return i.normalizedAssignees
 }
 
 func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
@@ -46,10 +79,14 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 
 	kinds := opMapping{}
 	for _, s := range sourceIssues {
-		src := &issue{s}
+		src := &issue{
+			Issue: s,
+		}
 		kinds.requestCreate(src)
 		for _, t := range targetIssues {
-			target := &issue{t}
+			target := &issue{
+				Issue: t,
+			}
 			if src.Key().Eq(target.Key()) {
 				if target.hasMigrated() || src.eq(target) { // completely equal
 					kinds.requestNothing(src)
@@ -62,7 +99,9 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 
 	ops := []*IssueOp{}
 	for _, s := range sourceIssues {
-		src := &issue{s}
+		src := &issue{
+			Issue: s,
+		}
 		switch kinds.get(src) {
 		case OpCreate:
 			ops = append(ops, &IssueOp{
