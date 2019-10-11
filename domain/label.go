@@ -17,17 +17,14 @@ func (l *label) Key() *Key {
 	return &Key{kind: "label", repr: l.GetName()}
 }
 
-func (l *label) Eq(other Equalable) bool {
+func (l *label) eq(other *label) bool {
 	if l == nil || other == nil {
 		return false
 	}
 	if !l.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherLabel, ok := other.(*label); ok {
-		return l.GetColor() == otherLabel.GetColor() && l.GetDescription() == otherLabel.GetDescription()
-	}
-	return false
+	return l.GetColor() == other.GetColor() && l.GetDescription() == other.GetDescription()
 }
 
 type LabelOpsList []*LabelOp
@@ -55,17 +52,17 @@ func NewLabelOpsList(sourceLabels, targetLabels []*github.Label) LabelOpsList {
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, src := range sourceLabels {
 		srcm := &label{src}
-		kinds[srcm.Key().String()] = OpCreate
+		kinds.requestCreate(srcm)
 		for _, tgt := range targetLabels {
 			tgtm := &label{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
-				if srcm.Eq(tgtm) { // completely equal
-					kinds[srcm.Key().String()] = OpNothing
+				if srcm.eq(tgtm) { // completely equal
+					kinds.requestNothing(srcm)
 				} else {
-					kinds[srcm.Key().String()] = OpUpdate
+					kinds.requestNothing(srcm)
 				}
 			}
 		}
@@ -74,7 +71,7 @@ func NewLabelOpsList(sourceLabels, targetLabels []*github.Label) LabelOpsList {
 	ops := []*LabelOp{}
 	for _, src := range sourceLabels {
 		srcm := &label{src}
-		switch kinds[srcm.Key().String()] {
+		switch kinds.get(srcm) {
 		case OpCreate:
 			ops = append(ops, &LabelOp{
 				Kind:  OpCreate,

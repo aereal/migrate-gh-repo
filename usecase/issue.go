@@ -21,6 +21,9 @@ func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issues from target repository: %w", err)
 	}
+	for _, issue := range targetIssues {
+		u.issueNumberIDMapping[issue.GetNumber()] = issue.GetID()
+	}
 
 	reqs := []request{}
 	ops := domain.NewIssueOpsList(sourceIssues, targetIssues)

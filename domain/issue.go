@@ -29,17 +29,14 @@ func (i *issue) Key() *Key {
 	return &Key{kind: "issue", repr: fmt.Sprintf("%d", i.GetNumber())}
 }
 
-func (i *issue) Eq(other Equalable) bool {
+func (i *issue) eq(other *issue) bool {
 	if i == nil || other == nil {
 		return false
 	}
 	if !i.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherIssue, ok := other.(*issue); ok {
-		return i.GetTitle() == otherIssue.GetTitle()
-	}
-	return false
+	return i.GetTitle() == other.GetTitle()
 }
 
 func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
@@ -47,18 +44,17 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, s := range sourceIssues {
 		src := &issue{s}
-		defaultKind := OpCreate
-		kinds[src.Key().String()] = defaultKind
+		kinds.requestCreate(src)
 		for _, t := range targetIssues {
 			target := &issue{t}
 			if src.Key().Eq(target.Key()) {
-				if target.hasMigrated() || src.Eq(target) { // completely equal
-					kinds[src.Key().String()] = OpNothing
+				if target.hasMigrated() || src.eq(target) { // completely equal
+					kinds.requestNothing(src)
 				} else {
-					kinds[src.Key().String()] = OpUpdate
+					kinds.requestUpdate(src)
 				}
 			}
 		}
@@ -67,7 +63,7 @@ func NewIssueOpsList(sourceIssues, targetIssues []*github.Issue) IssueOpsList {
 	ops := []*IssueOp{}
 	for _, s := range sourceIssues {
 		src := &issue{s}
-		switch kinds[src.Key().String()] {
+		switch kinds.get(src) {
 		case OpCreate:
 			ops = append(ops, &IssueOp{
 				Kind:  OpCreate,

@@ -17,17 +17,14 @@ func (m *milestone) Key() *Key {
 	return &Key{kind: "milestone", repr: m.GetTitle()}
 }
 
-func (m *milestone) Eq(other Equalable) bool {
+func (m *milestone) eq(other *milestone) bool {
 	if m == nil || other == nil {
 		return false
 	}
 	if !m.Key().Eq(other.Key()) {
 		return false
 	}
-	if otherMilestone, ok := other.(*milestone); ok {
-		return m.GetDescription() == otherMilestone.GetDescription() && m.GetDueOn() == otherMilestone.GetDueOn()
-	}
-	return false
+	return m.GetDescription() == other.GetDescription() && m.GetDueOn() == other.GetDueOn()
 }
 
 func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone) MilestoneOpsList {
@@ -35,17 +32,17 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 		return nil
 	}
 
-	kinds := map[string]OpKind{}
+	kinds := opMapping{}
 	for _, src := range sourceMilestones {
 		srcm := &milestone{src}
-		kinds[srcm.Key().String()] = OpCreate
+		kinds.requestCreate(srcm)
 		for _, tgt := range targetMilestones {
 			tgtm := &milestone{tgt}
 			if srcm.Key().Eq(tgtm.Key()) {
-				if srcm.Eq(tgtm) { // completely equal
-					kinds[srcm.Key().String()] = OpNothing
+				if srcm.eq(tgtm) { // completely equal
+					kinds.requestNothing(srcm)
 				} else {
-					kinds[srcm.Key().String()] = OpUpdate
+					kinds.requestUpdate(srcm)
 				}
 			}
 		}
@@ -54,7 +51,7 @@ func NewMilestoneOpsList(sourceMilestones, targetMilestones []*github.Milestone)
 	ops := []*MilestoneOp{}
 	for _, src := range sourceMilestones {
 		srcm := &milestone{src}
-		switch kinds[srcm.Key().String()] {
+		switch kinds.get(srcm) {
 		case OpCreate:
 			ops = append(ops, &MilestoneOp{
 				Kind:      OpCreate,

@@ -86,3 +86,54 @@ func (s *GitHubService) SlurpIssueComments(ctx context.Context, owner, repo stri
 	}
 	return issueComments, nil
 }
+
+func (s *GitHubService) SlurpProjects(ctx context.Context, owner, repo string) ([]*github.Project, error) {
+	opts := &github.ProjectListOptions{State: "all", ListOptions: github.ListOptions{PerPage: 100}}
+	projects := []*github.Project{}
+	for {
+		pjs, resp, err := s.client.Repositories.ListProjects(ctx, owner, repo, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list projects: %w", err)
+		}
+		projects = append(projects, pjs...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return projects, nil
+}
+
+func (s *GitHubService) SlurpProjectColumns(ctx context.Context, projectID int64) ([]*github.ProjectColumn, error) {
+	opts := &github.ListOptions{PerPage: 100}
+	columns := []*github.ProjectColumn{}
+	for {
+		cols, resp, err := s.client.Projects.ListProjectColumns(ctx, projectID, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project columns: %w", err)
+		}
+		columns = append(columns, cols...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return columns, nil
+}
+
+func (s *GitHubService) SlurpProjectCards(ctx context.Context, columnID int64) ([]*github.ProjectCard, error) {
+	opts := &github.ProjectCardListOptions{ListOptions: github.ListOptions{PerPage: 100}}
+	cards := []*github.ProjectCard{}
+	for {
+		cs, resp, err := s.client.Projects.ListProjectCards(ctx, columnID, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project cards: %w", err)
+		}
+		cards = append(cards, cs...)
+		opts.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
+		}
+	}
+	return cards, nil
+}
