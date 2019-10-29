@@ -28,18 +28,21 @@ func (u *Usecase) buildIssueRequests(ctx context.Context, source, target *config
 	reqs := []request{}
 	ops := domain.NewIssueOpsList(sourceIssues, targetIssues)
 	for _, op := range ops {
-		reqs = append(reqs, newIssueRequests(u.userAliasResolver, source, target, op)...)
+		reqs = append(reqs, newIssueRequests(u.userAliasResolver, source, target, u.skipUsers, op)...)
 	}
 	return reqs, nil
 }
 
-func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo *config.Repository, op *domain.IssueOp) []request {
+func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo *config.Repository, skipUsers []string, op *domain.IssueOp) []request {
 	switch op.Kind {
 	case domain.OpCreate:
 		body := fmt.Sprintf("This issue or P-R imported from %s in previous repository (%s/%s)", op.Issue.GetHTMLURL(), sourceRepo.Owner, sourceRepo.Name)
 		assignees := []string{}
-		for _, assignee := range op.Issue.Assignees {
-			userOnTarget, _ := resolver.AssumeResolved(assignee.GetLogin())
+		for _, u := range op.Issue.Assignees {
+			if contains(skipUsers, u.GetLogin()) {
+				continue
+			}
+			userOnTarget, _ := resolver.AssumeResolved(u.GetLogin())
 			assignees = append(assignees, userOnTarget)
 		}
 		labels := []string{}
@@ -78,6 +81,9 @@ func newIssueRequests(resolver *domain.UserAliasResolver, sourceRepo, targetRepo
 		labels := []string{"migrated"}
 		assignees := []string{}
 		for _, u := range op.Issue.Assignees {
+			if contains(skipUsers, u.GetLogin()) {
+				continue
+			}
 			userOnTarget, _ := resolver.AssumeResolved(u.GetLogin())
 			assignees = append(assignees, userOnTarget)
 		}

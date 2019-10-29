@@ -37,6 +37,7 @@ type Config struct {
 	Source      Endpoint          `json:"source"`
 	Target      Endpoint          `json:"target"`
 	UserAliases map[string]string `json:"userAliases"`
+	SkipUsers   []string          `json:"skipUsers"`
 }
 
 func Load(configFilePath string) (*Config, error) {
