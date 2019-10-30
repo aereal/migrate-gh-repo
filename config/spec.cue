@@ -23,3 +23,4 @@ Endpoint :: {
 source: Endpoint
 target: Endpoint
 userAliases: UserAliases
+skipUsers: [...string]

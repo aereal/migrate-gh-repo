@@ -37,7 +37,7 @@ func run(argv []string) error {
 	}
 
 	resolver := domain.NewUserAliasResolver(cfg.UserAliases)
-	u, err := usecase.New(resolver, sourceClient, targetClient)
+	u, err := usecase.New(resolver, sourceClient, targetClient, cfg.SkipUsers)
 	if err != nil {
 		return err
 	}

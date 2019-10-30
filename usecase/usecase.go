@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func New(userResolver *domain.UserAliasResolver, sourceClient, targetClient *github.Client) (*Usecase, error) {
+func New(userResolver *domain.UserAliasResolver, sourceClient, targetClient *github.Client, skipUsers []string) (*Usecase, error) {
 	if sourceClient == nil || targetClient == nil {
 		return nil, fmt.Errorf("both of sourceClient and targetClient must be given")
 	}
@@ -30,6 +30,7 @@ func New(userResolver *domain.UserAliasResolver, sourceClient, targetClient *git
 		sourceService:        sourceService,
 		targetService:        targetService,
 		userAliasResolver:    userResolver,
+		skipUsers:            skipUsers,
 		issueNumberIDMapping: map[int]int64{},
 	}, nil
 }
@@ -40,6 +41,7 @@ type Usecase struct {
 	targetClient         *github.Client
 	targetService        *external.GitHubService
 	userAliasResolver    *domain.UserAliasResolver
+	skipUsers            []string
 	issueNumberIDMapping map[int]int64 // number -> id
 }
 
