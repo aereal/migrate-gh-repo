@@ -2,7 +2,9 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 
 	"cuelang.org/go/cue"
 	"github.com/google/go-github/github"
@@ -26,6 +28,11 @@ func (e *Endpoint) GitHubClient(ctx context.Context) (*github.Client, error) {
 	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: e.Token,
 	}))
+	httpClient.Transport.(*oauth2.Transport).Base = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: e.IgnoreSSLVerification,
+		},
+	}
 
 	if e.URL != "" {
 		return github.NewEnterpriseClient(e.URL, e.URL /* TODO */, httpClient)
