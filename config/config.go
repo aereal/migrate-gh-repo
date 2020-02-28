@@ -3,10 +3,11 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
-	"cuelang.org/go/cue"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
@@ -47,26 +48,14 @@ type Config struct {
 	SkipUsers   []string          `json:"skipUsers"`
 }
 
-func Load(configFilePath string) (*Config, error) {
-	r := &cue.Runtime{}
-
-	spec, err := r.Compile("./config/spec.cue", nil)
+func Load(file string) (*Config, error) {
+	f, err := os.Open(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to compile spec: %w", err)
+		return nil, fmt.Errorf("failed to open file %s: %w", file, err)
 	}
-
-	inst, err := r.Compile(configFilePath, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile file (%q): %w", configFilePath, err)
-	}
-	v := spec.Value().Unify(inst.Value())
-	if err := v.Err(); err != nil {
-		return nil, fmt.Errorf("failed to unify: %w", err)
-	}
-
 	cfg := &Config{}
-	if err := v.Decode(cfg); err != nil {
-		return nil, fmt.Errorf("failed to decode: %w", err)
+	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
+		return nil, fmt.Errorf("cannot decode config: %w", err)
 	}
 	return cfg, nil
 }

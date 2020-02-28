@@ -18,7 +18,7 @@ func main() {
 }
 
 func run(argv []string) error {
-	cfg, err := config.Load("./config/default.cue")
+	cfg, err := config.Load("./config/default.json")
 	if err != nil {
 		return err
 	}

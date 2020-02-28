@@ -14,9 +14,7 @@ go run ./
 
 ## Configuration
 
-- Write your configuration to `config/default.cue`
-- The spec is `config/spec.cue`
-- refs. https://cuelang.org/
+- Write your configuration to `config/default.json`
 
 ## Caveats
 
