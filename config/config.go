@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/aereal/migrate-gh-repo/http/cache"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
@@ -29,11 +30,14 @@ func (e *Endpoint) GitHubClient(ctx context.Context) (*github.Client, error) {
 	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: e.Token,
 	}))
-	httpClient.Transport.(*oauth2.Transport).Base = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: e.IgnoreSSLVerification,
+	httpClient.Transport.(*oauth2.Transport).Base = cache.New(
+		&http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: e.IgnoreSSLVerification,
+			},
 		},
-	}
+		&cache.FileCache{Root: "./cache"},
+	)
 
 	if e.URL != "" {
 		return github.NewEnterpriseClient(e.URL, e.URL /* TODO */, httpClient)
