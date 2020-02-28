@@ -42,8 +42,8 @@ func (e *Endpoint) GitHubClient(ctx context.Context) (*github.Client, error) {
 }
 
 type Config struct {
-	Source      Endpoint          `json:"source"`
-	Target      Endpoint          `json:"target"`
+	Source      *Endpoint         `json:"source,omitempty"`
+	Target      *Endpoint         `json:"target,omitempty"`
 	UserAliases map[string]string `json:"userAliases"`
 	SkipUsers   []string          `json:"skipUsers"`
 }
